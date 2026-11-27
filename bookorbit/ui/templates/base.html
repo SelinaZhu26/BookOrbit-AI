@@ -1,0 +1,78 @@
+{% from "_macros.html" import icon, logo, initials %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}BookOrbit AI{% endblock %}</title>
+<link rel="icon" href="{{ url_for('favicon') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body data-role="{{ S.role }}">
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('home') }}">{{ logo(22) }} BookOrbit AI</a>
+    {% if me %}
+    <div class="usercard">
+      <div class="avatar">{{ initials(me.full_Name) }}</div>
+      <div><div class="name">{{ me.full_Name }}</div>
+        <div class="role" id="role-label">{{ ROLE_NAMES[me.role] }}{% if me.status == 'SUSPENDED' %} · Suspended{% endif %}</div></div>
+    </div>
+    {% else %}
+    <div class="usercard"><div class="avatar" style="background:#56647F;color:#fff">VS</div>
+      <div><div class="name">Visitor</div><div class="role" id="role-label">Browsing as a guest</div></div></div>
+    {% endif %}
+    <nav class="nav">
+      {% macro item(ep, label, ic, count=None) %}<a href="{{ url_for(ep) }}" class="{{ 'active' if nav == ep else '' }}" data-nav="{{ ep }}">{{ icon(ic) }} {{ label }}{% if count %}<span class="count">{{ count }}</span>{% endif %}</a>{% endmacro %}
+      {% if S.wallet_only %}
+        {{ item('balance', 'My Balance', 'wallet') }}
+      {% elif S.role == 'SU' %}
+        {{ item('home', 'Home', 'home') }}
+        {{ item('browse', 'Browse', 'search') }}
+        {{ item('admin_books', 'Manage Books', 'book') }}
+        {{ item('admin_taboo', 'Taboo Words', 'shield') }}
+        {{ item('admin_users', 'User Management', 'users') }}
+        {{ item('admin_reports', 'Reports', 'chart') }}
+        {{ item('chat', 'AI Chatbot', 'chat') }}
+      {% elif S.is_customer %}
+        {{ item('home', 'Home', 'home') }}
+        {{ item('browse', 'Browse', 'search') }}
+        {{ item('recommendations', 'Recommendations', 'sparkle') }}
+        {{ item('orders', 'My Orders', 'bag') }}
+        {{ item('my_reviews', 'My Reviews', 'star') }}
+        {{ item('balance', 'My Balance', 'wallet') }}
+        {{ item('chat', 'AI Chatbot', 'chat') }}
+        {% if cart_count %}{{ item('checkout', 'Cart', 'cart', cart_count) }}{% endif %}
+      {% else %}
+        {{ item('home', 'Home', 'home') }}
+        {{ item('browse', 'Browse', 'search') }}
+        {{ item('chat', 'AI Chatbot', 'chat') }}
+      {% endif %}
+      <hr>
+      {% if me %}
+        <a href="{{ url_for('signout') }}" data-nav="signout">{{ icon('logout') }} Sign Out</a>
+      {% else %}
+        {{ item('signin', 'Sign In', 'login') }}
+        {{ item('register', 'Register', 'user-plus') }}
+      {% endif %}
+    </nav>
+    <div class="statusbox">
+      <div><span class="dot {{ 'on' if llm_status.startswith('Ollama online (') else 'off' }}"></span>{{ llm_status }}</div>
+      <div><span class="dot {{ 'on' if 'ready' in face_status else 'off' }}"></span>Face sign-in: {{ face_status }}</div>
+      <div><span class="dot on"></span>Data: local text files</div>
+    </div>
+  </aside>
+  <main class="main {% block mainclass %}{% endblock %}">
+    {% if me and me.status == 'SUSPENDED' %}
+      <div class="banner" id="suspended-banner"><b>Your account is suspended</b> ({{ me.suspension_Reason or 'by a Super-User' }}).
+        You are in wallet-only mode. {% if me.balance < 0 %}Add at least {{ fmt(-me.balance) }} so your balance is $0 or more, then {% endif %}ask a Super-User to reopen your account.</div>
+    {% endif %}
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in msgs %}<div class="alert {{ cat }}" role="status">{{ m }}</div>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

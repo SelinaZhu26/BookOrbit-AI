@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stars %}
+{% block title %}My Reviews · BookOrbit AI{% endblock %}
+{% block content %}
+<h1>My Reviews</h1>
+<div class="grid" style="grid-template-columns:minmax(0,1fr) 300px;align-items:start;margin-top:14px">
+  <div class="card">
+    <table class="tbl" id="my-reviews">
+      <thead><tr><th>Book</th><th>Rating</th><th>Comment (as shown)</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for r in reviews %}
+      <tr><td>{% if r.book %}<a class="link" href="{{ url_for('book', book_ID=r.book_ID) }}">{{ r.book.title }}</a>{% endif %}<div class="tiny muted">{{ r.updated_At[:10] }}</div></td>
+        <td class="nowrap">{{ stars(r.rating) }}</td>
+        <td class="small">{% if r.status == 'BLOCKED' %}<i class="muted">Blocked - not shown ({{ r.taboo_Count }} prohibited words)</i>{% else %}{{ r.display_Text }}{% endif %}</td>
+        <td><span class="badge {{ 'green' if r.status == 'PUBLISHED' else 'red' }}">{{ r.status|title }}</span>{% if r.verified_Buyer %}<div class="tiny" style="color:var(--green)">verified ×2</div>{% endif %}</td></tr>
+      {% else %}<tr><td colspan="4" class="muted">No reviews yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card" id="warnings">
+    <div class="kicker">Warnings</div>
+    <div class="balance-big">{{ user.warnings }} of 3</div>
+    <div class="tiny muted" style="margin-bottom:10px">A comment with more than 3 taboo words is blocked and gives a warning. Registered Customers with more than 2 warnings are suspended; a VIP Customer with a blocked comment becomes a Registered Customer.</div>
+    {% for w in warnings %}<div class="small" style="padding:6px 0;border-top:1px solid #EFEBE3"><span class="badge red">{{ w.warning_ID }}</span> {{ w.created_At[:10] }} · {{ w.reason }}</div>{% endfor %}
+  </div>
+</div>
+{% endblock %}

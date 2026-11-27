@@ -1,0 +1,11 @@
+{% from "_macros.html" import icon %}
+<div class="modal-bg" id="cover-modal" role="dialog" aria-modal="true" aria-labelledby="cover-title">
+  <form class="modal" action="{{ url_for('cover_search') }}" method="post" enctype="multipart/form-data">
+    <h2 id="cover-title">Search by cover</h2>
+    <p class="small muted">Upload a photo or scan of a book cover (JPG or PNG). We show the 5 most similar covers in the store.</p>
+    <div class="field"><input type="file" name="cover" accept="image/png,image/jpeg" required id="cover-file"></div>
+    <div class="row"><span class="spacer"></span>
+      <button class="btn ghost" type="button" data-close="cover-modal">Cancel</button>
+      <button class="btn" type="submit">{{ icon('search', 14) }} Find this book</button></div>
+  </form>
+</div>

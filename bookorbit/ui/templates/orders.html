@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}My Orders · BookOrbit AI{% endblock %}
+{% block content %}
+<h1>My Orders</h1>
+<div class="card" style="margin-top:14px">
+<table class="tbl" id="orders">
+  <thead><tr><th></th><th>Book</th><th>Date</th><th style="text-align:right">List price</th><th style="text-align:right">Discount</th><th style="text-align:right">Paid</th><th></th></tr></thead>
+  <tbody>
+  {% for o in orders %}{% if o.book %}
+  <tr><td style="width:44px"><img src="{{ url_for('covers', name=o.book.cover_Path.split('/')[-1]) }}" style="width:34px;border-radius:2px" alt=""></td>
+    <td><a class="link" href="{{ url_for('book', book_ID=o.book_ID) }}">{{ o.book.title }}</a><div class="tiny muted">{{ o.book.author }}</div></td>
+    <td class="nowrap">{{ o.created_At[:10] }}</td><td style="text-align:right">{{ fmt(o.list_Price) }}</td>
+    <td style="text-align:right">{{ ('−' ~ fmt(o.discount)) if o.discount else '—' }}</td><td style="text-align:right"><b>{{ fmt(o.paid) }}</b></td>
+    <td>{% if o.book.text_Path %}<a class="btn small" href="{{ url_for('read', book_ID=o.book_ID) }}">{{ icon('reading', 13) }} Read</a>{% endif %}</td></tr>
+  {% endif %}{% else %}<tr><td colspan="7" class="muted">You have not bought any books yet. <a class="link" href="{{ url_for('browse') }}">Browse books</a></td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}My Balance · BookOrbit AI{% endblock %}
+{% block content %}
+<h1>My Balance</h1>
+<div class="grid" style="grid-template-columns:320px minmax(0,1fr);align-items:start;margin-top:14px">
+  <div class="grid">
+    <div class="card">
+      <div class="kicker">Account balance</div>
+      <div class="balance-big {{ 'amount-neg' if user.balance < 0 }}" id="balance">{{ fmt(user.balance) }}</div>
+      <div class="small muted">{{ ROLE_NAMES[user.role] }} · {{ user.status|title }} · {{ user.warnings }} warning{{ '' if user.warnings == 1 else 's' }}</div>
+    </div>
+    <form class="card" method="post" action="{{ url_for('deposit') }}" id="add">
+      <h3>Add funds</h3>
+      <div class="field {{ 'invalid' if amount_error }}"><label class="lbl" for="amount">Amount (USD)</label>
+        <input type="text" name="amount" id="amount" placeholder="25.00" inputmode="decimal">
+        {% if amount_error %}<div class="err" id="amount-error">{{ amount_error }}</div>{% endif %}</div>
+      <div class="row wrap" style="margin-bottom:10px">{% for v in ['10','25','50','100'] %}<button type="button" class="btn ghost small" data-fill="amount" data-value="{{ v }}">${{ v }}</button>{% endfor %}</div>
+      <button class="btn block" id="add-funds">Add Funds</button>
+      <div class="tiny muted" style="margin-top:8px">Up to $10,000 per deposit, at most 2 decimals.</div>
+    </form>
+    {% if user.role == 'RC' %}
+    <div class="card small"><div class="kicker">VIP progress</div>
+      <div style="margin-top:6px">{{ user.promo_Purchases }} of more than 3 purchases · {{ fmt(user.promo_Spent) }} of more than $200</div></div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <h3>Ledger</h3>
+    <table class="tbl" id="ledger">
+      <thead><tr><th>Date</th><th>Type</th><th>Note</th><th style="text-align:right">Amount</th><th style="text-align:right">Balance after</th></tr></thead>
+      <tbody>
+      {% for t in ledger %}
+        <tr><td class="nowrap">{{ t.created_At[:16].replace('T', ' ') }}</td>
+          <td><span class="badge {{ {'DEPOSIT':'green','FINE':'red','PURCHASE':''}[t.type] }}">{{ t.type }}</span></td>
+          <td>{{ t.note }}</td>
+          <td style="text-align:right" class="{{ 'amount-pos' if t.amount > 0 else 'amount-neg' }}">{{ ('+' if t.amount > 0 else '') ~ fmt(t.amount) }}</td>
+          <td style="text-align:right">{{ fmt(t.balance_After) }}</td></tr>
+      {% else %}<tr><td colspan="5" class="muted">No transactions yet</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% if status_log %}
+    <h3 style="margin-top:22px">Account status history</h3>
+    <table class="tbl">{% for c in status_log %}<tr><td class="nowrap">{{ c.created_At[:16].replace('T',' ') }}</td><td>{{ c.from_Role }}/{{ c.from_Status }} → <b>{{ c.to_Role }}/{{ c.to_Status }}</b></td><td>{{ c.reason }}</td></tr>{% endfor %}</table>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

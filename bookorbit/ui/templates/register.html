@@ -1,0 +1,23 @@
+{% extends "auth_base.html" %}
+{% block title %}Create your account{% endblock %}
+{% block content %}
+<h2>Create your account</h2>
+<div class="small muted" style="margin-bottom:18px">Already have one? <a class="link" href="{{ url_for('signin') }}">Sign in</a></div>
+<form method="post" enctype="multipart/form-data" id="register-form" novalidate>
+  {% for name, label, type in [('full_name','Full name','text'),('username','Username','text'),('email','Email','email')] %}
+  <div class="field {{ 'invalid' if errors.get(name) }}">
+    <label class="lbl" for="{{ name }}">{{ label }}</label>
+    <input type="{{ type }}" id="{{ name }}" name="{{ name }}" value="{{ form[name] }}" {% if name == 'username' %}placeholder="3-20 letters, digits or _"{% endif %}>
+    {% if errors.get(name) %}<div class="err" data-error="{{ name }}">{{ errors[name] }}</div>{% endif %}
+  </div>
+  {% endfor %}
+  {% set purpose = 'register' %}
+  {% include "_facebox.html" %}
+  <div class="field {{ 'invalid' if errors.get('terms') }}">
+    <label class="small"><input type="checkbox" name="terms" value="1" {{ 'checked' if request.form.get('terms') }} id="terms"> I agree to the BookOrbit terms and privacy policy.</label>
+    {% if errors.get('terms') %}<div class="err" data-error="terms">{{ errors.terms }}</div>{% endif %}
+  </div>
+  <button class="btn block" type="submit" id="create-account">Create account</button>
+  <div style="text-align:center;margin-top:14px" class="small"><a class="link" href="{{ url_for('home') }}" style="font-weight:500;text-decoration:underline">Just browsing? Continue as a visitor</a></div>
+</form>
+{% endblock %}

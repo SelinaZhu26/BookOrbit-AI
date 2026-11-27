@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}Checkout · BookOrbit AI{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('browse') }}">‹ Continue shopping</a>
+<h1>Checkout</h1>
+{% if not quote or not quote.lines %}
+  <div class="card" style="margin-top:16px;text-align:center;padding:40px" id="empty-cart"><h3>Your cart is empty</h3>
+    <a class="btn" href="{{ url_for('browse') }}">Browse books</a></div>
+{% else %}
+<div class="checkout" style="margin-top:16px">
+  <div class="grid">
+    <div class="card">
+      <h3>Your cart ({{ quote.lines|length }} book{{ 's' if quote.lines|length > 1 }})</h3>
+      {% for l in quote.lines %}
+      <div class="line" data-line="{{ l.book.book_ID }}">
+        <img src="{{ url_for('covers', name=l.book.cover_Path.split('/')[-1]) }}" alt="">
+        <div style="flex:1"><b>{{ l.book.title }}</b><div class="small muted">{{ l.book.author }}</div>
+          <div class="tiny muted">eBook · {{ 'read instantly in the Reading Companion' if l.book.text_Path else 'added to My Orders' }}</div>
+          {% if l.owned %}<div class="err">You already own this book - remove it to continue.</div>{% endif %}</div>
+        <div style="text-align:right"><b>{{ fmt(l.paid) }}</b>{% if l.discount > 0 %}<div class="tiny muted"><s>{{ fmt(l.list) }}</s> VIP −10%</div>{% endif %}
+          <form method="post" action="{{ url_for('cart_remove', book_ID=l.book.book_ID) }}"><button class="link" style="background:none;border:0;cursor:pointer;font-size:12px;padding:4px 0">Remove</button></form></div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="card">
+      <h3>Payment</h3>
+      <div class="payopt"><input type="radio" checked aria-label="Pay with store balance"> {{ icon('wallet', 16) }}
+        <div style="flex:1"><b class="small">BookOrbit balance</b><div class="tiny muted">Available {{ fmt(quote.balance) }}</div></div>
+        <a class="link" href="{{ url_for('balance') }}#add">Add funds</a></div>
+      <div class="tiny muted" style="margin-top:10px">Purchases are paid from your store balance. If the total is more than your balance, the order is rejected and a $1.00 fine is charged.</div>
+    </div>
+  </div>
+  <div class="card" id="order-summary">
+    <h3>Order summary</h3>
+    <div class="sumrow"><span>Subtotal ({{ quote.lines|length }} book{{ 's' if quote.lines|length > 1 }})</span><span>{{ fmt(quote.subtotal) }}</span></div>
+    <div class="sumrow"><span>VIP discount {% if quote.vip %}(10%){% endif %}</span><span id="discount">{{ '−' ~ fmt(quote.discount) if quote.discount > 0 else '—' }}</span></div>
+    {% if not quote.vip %}<div class="tiny muted">Become a VIP after more than 3 purchases or $200 spent: 10% off every book.</div>{% endif %}
+    <div class="sumrow total"><span>Total</span><span id="total">{{ fmt(quote.total) }}</span></div>
+    <div class="sumrow"><span>Balance after purchase</span><span id="balance-after" class="{{ 'amount-neg' if quote.balance_after < 0 else 'amount-pos' }}">{{ fmt(quote.balance_after) }}</span></div>
+    {% if quote.balance_after < 0 %}<div class="alert error small" style="margin:8px 0" id="insufficient">Your balance is too low for this order. Placing it will be rejected with a $1.00 fine — add funds first.</div>{% endif %}
+    <form method="post" id="place-order-form" data-confirm="Place this order for {{ fmt(quote.total) }}?">
+      <button class="btn gold block" style="margin-top:10px" id="place-order">Place order · {{ fmt(quote.total) }}</button>
+    </form>
+    <div class="tiny muted" style="text-align:center;margin-top:8px">Every chapter unlocks in the Reading Companion as soon as your order goes through.</div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, bookcard %}
+{% block title %}Browse & Search · BookOrbit AI{% endblock %}
+{% block content %}
+<h1>Browse &amp; Search</h1>
+{% if cover_mode %}
+  <div class="alert info">Cover search results — the {{ res.books|length }} most similar cover{{ '' if res.books|length == 1 else 's' }}.
+    <a class="link" href="{{ url_for('browse') }}">Back to all books</a></div>
+{% else %}
+<form method="get" action="{{ url_for('browse') }}" class="filters" id="browse-form">
+  <div><label class="lbl" for="category">Category</label>
+    <select name="category" id="category"><option value="">All categories</option>
+      {% for c in categories %}<option {{ 'selected' if args.get('category') == c }}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label class="lbl" for="field">Search in</label>
+    <select name="field" id="field">
+      {% for v, l in [('title','Title'),('author','Author'),('keyword','Keyword'),('year','Year')] %}
+      <option value="{{ v }}" {{ 'selected' if args.get('field','title') == v }}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="{{ 'field invalid' if res.errors.year }}" style="margin:0"><label class="lbl" for="q">Query (year: 1990 or 1800–1850)</label>
+    <input type="search" name="q" id="q" value="{{ args.get('q','') }}" placeholder="Search books…">
+    {% if res.errors.year %}<div class="err" id="year-error">{{ res.errors.year }}</div>{% endif %}</div>
+  <div><label class="lbl" for="sort">Sort</label>
+    <select name="sort" id="sort">
+      {% for v, l in [('title','Title'),('author','Author'),('year','Year'),('price','Price'),('rating','Rating'),('popular','Popularity')] %}
+      <option value="{{ v }}" {{ 'selected' if args.get('sort','title') == v }}>{{ l }}</option>{% endfor %}</select></div>
+  <button class="btn" type="submit">Search</button>
+  <a class="btn ghost" href="{{ url_for('browse') }}">Clear filters</a>
+  <button class="btn ghost" type="button" data-open="cover-modal" {{ '' if cover_ok else 'disabled title=Cover search is unavailable' }}>{{ icon('camera', 14) }} Cover search</button>
+</form>
+{% endif %}
+<div class="small muted" style="margin:10px 0 16px" id="result-count">{{ res.total }} book{{ '' if res.total == 1 else 's' }} found</div>
+
+{% if res.books %}
+<div class="books" id="results">
+  {% for b in res.books %}{{ bookcard(b, sim=res.similarities.get(b.book_ID) if cover_mode else None) }}{% endfor %}
+</div>
+{% if res.pages > 1 %}
+<div class="pager">
+  {% set q = args.copy() %}
+  {% if res.page > 1 %}{% set _ = q.update({'page': res.page - 1}) %}<a class="btn ghost small" href="{{ url_for('browse', **q) }}">‹ Prev</a>{% else %}<span class="btn ghost small disabled">‹ Prev</span>{% endif %}
+  <span>Page {{ res.page }} of {{ res.pages }}</span>
+  {% if res.page < res.pages %}{% set _ = q.update({'page': res.page + 1}) %}<a class="btn ghost small" href="{{ url_for('browse', **q) }}">Next ›</a>{% else %}<span class="btn ghost small disabled">Next ›</span>{% endif %}
+</div>
+{% endif %}
+{% else %}
+<div class="card" style="text-align:center;padding:40px" id="no-results">
+  <h3>No books found</h3>
+  <p class="muted small">{{ res.message if res.errors else 'Try another word, a different category or a wider year range.' }}</p>
+  <a class="btn ghost" href="{{ url_for('browse') }}">Clear filters</a>
+</div>
+{% endif %}
+{% include "_cover_modal.html" %}
+{% endblock %}

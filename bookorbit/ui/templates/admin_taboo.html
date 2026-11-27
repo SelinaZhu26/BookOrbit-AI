@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Taboo Words · BookOrbit AI{% endblock %}
+{% block content %}
+<h1>Taboo Word Management</h1>
+<div class="muted small" style="margin-bottom:16px">Words are replaced by asterisks in reviews; a comment with more than 3 of them is blocked. Changes apply to reviews submitted from now on.</div>
+<div class="card" style="max-width:640px">
+  <form method="post" class="row" id="taboo-add">
+    <input type="hidden" name="action" value="add">
+    <input type="text" name="word" placeholder="Enter a taboo word…" class="{{ 'invalid' if error and not edit }}" id="new-word">
+    <button class="btn">Add</button>
+  </form>
+  {% if error %}<div class="err" id="taboo-error" style="margin-top:6px">{{ error }}</div>{% endif %}
+  <table class="tbl" style="margin-top:16px" id="taboo-table">
+    <thead><tr><th>Taboo word</th><th>Added</th><th style="text-align:right">Actions</th></tr></thead>
+    <tbody>
+    {% for w in words %}
+    <tr data-word="{{ w.word }}">
+      {% if edit == w.word %}
+      <td colspan="2"><form method="post" class="row" id="taboo-edit"><input type="hidden" name="action" value="edit"><input type="hidden" name="old" value="{{ w.word }}">
+        <input type="text" name="word" value="{{ w.word }}" id="edit-word"><button class="btn small">Save</button>
+        <a class="btn ghost small" href="{{ url_for('admin_taboo') }}">Cancel</a></form></td><td></td>
+      {% else %}
+      <td><b>{{ w.word }}</b></td><td class="small muted">{{ w.added_At[:10] }}</td>
+      <td style="text-align:right" class="nowrap"><a class="btn ghost small" href="{{ url_for('admin_taboo', edit=w.word) }}">Edit</a>
+        <form method="post" style="display:inline" data-confirm="Delete “{{ w.word }}” from the taboo list?"><input type="hidden" name="action" value="delete"><input type="hidden" name="old" value="{{ w.word }}">
+          <button class="btn danger small">Delete</button></form></td>
+      {% endif %}
+    </tr>
+    {% else %}<tr><td colspan="3" class="muted">The list is empty.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

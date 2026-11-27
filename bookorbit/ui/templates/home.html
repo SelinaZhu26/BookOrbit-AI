@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, bookcard %}
+{% block title %}Home · BookOrbit AI{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hello">{% if me %}Welcome back, {{ me.full_Name.split()[0] }}{% else %}Welcome to BookOrbit AI{% endif %}</div>
+  <h1>Discover your next favorite book</h1>
+  <p>Search by title, author, keyword or year — or snap a photo of a cover.</p>
+  <form action="{{ url_for('browse') }}" method="get" role="search">
+    <input type="hidden" name="field" value="any">
+    <input type="search" name="q" placeholder="Try “whale”, “Austen” or 1800–1850" aria-label="Search books">
+    <button class="btn gold" type="submit">Search</button>
+    <button class="btn ghost-dark" type="button" data-open="cover-modal">{{ icon('camera', 14) }} Cover search</button>
+  </form>
+</section>
+
+<div class="home-cols">
+  <section>
+    <div class="section-head">
+      <div><h2 id="rec-title">{{ rec.title }}</h2><div class="muted small">{{ rec.subtitle }}</div></div>
+      {% if S.is_customer %}<a class="link" href="{{ url_for('recommendations') }}">See all recommendations ›</a>
+      {% else %}<a class="link" href="{{ url_for('browse', sort='popular') }}">Browse all books ›</a>{% endif %}
+    </div>
+    {% if rec.books %}
+    <div class="books three" id="top-books">
+      {% for b in rec.books %}{{ bookcard(b, rec.reasons.get(b.book_ID)) }}{% endfor %}
+    </div>
+    {% else %}
+      <div class="card muted">No books available yet</div>
+    {% endif %}
+
+    {% if S.role == 'SU' %}
+    <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:28px">
+      <div class="card"><h3>Order lists</h3>
+        <div class="small muted" style="margin-bottom:8px">Books with more than 3 ratings</div>
+        <div class="small"><span class="badge green">To-Order</span>
+          {% for b in lists.to_order %}{{ b.title }}{{ ', ' if not loop.last }}{% else %}<i class="muted">none</i>{% endfor %}</div>
+        <div class="small" style="margin-top:8px"><span class="badge red">No-Order</span>
+          {% for b in lists.no_order %}{{ b.title }}{{ ', ' if not loop.last }}{% else %}<i class="muted">none</i>{% endfor %}</div>
+        <a class="link" style="display:inline-block;margin-top:12px" href="{{ url_for('admin_reports') }}">Open Reports ›</a>
+      </div>
+      <div class="card"><h3>Recent admin actions</h3>
+        {% for a in actions %}<div class="small" style="padding:3px 0">{{ a.created_At[:16].replace('T',' ') }} · <b>{{ a.action }}</b> {{ a.target }}</div>
+        {% else %}<div class="small muted">No actions yet</div>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside class="grid">
+    {% if S.is_customer %}
+      <div class="card" id="balance-card">
+        <div class="kicker">Account balance</div>
+        <div class="balance-big">{{ fmt(me.balance) }}</div>
+        <div class="row"><a class="btn small" href="{{ url_for('balance') }}">Open My Balance</a>
+          <a class="btn ghost small" href="{{ url_for('balance') }}#add">Add funds</a></div>
+        {% if me.role == 'VC' %}<div class="badge gold" style="margin-top:12px">{{ icon('tag', 12) }} VIP · 10% off every book</div>{% endif %}
+      </div>
+      {% if reading %}
+      <div class="card cont">
+        <img src="{{ url_for('covers', name=reading.book.cover_Path.split('/')[-1]) }}" alt="">
+        <div><div class="kicker green">Continue reading</div>
+          <div style="font-weight:700;font-size:13px">{{ reading.book.title }}</div>
+          <div class="small muted">{{ reading.chapter_title }}</div>
+          <a class="link" href="{{ url_for('read', book_ID=reading.book.book_ID) }}">Open Reading Companion ›</a></div>
+      </div>
+      {% endif %}
+    {% elif S.role == 'SU' %}
+      <div class="card">
+        <div class="kicker">Super-User</div>
+        <div class="balance-big" style="font-size:20px">{{ suspended|length }} suspended</div>
+        <div class="small muted" style="margin-bottom:10px">accounts waiting to be reopened</div>
+        <div class="grid" style="gap:8px">
+          <a class="btn small" href="{{ url_for('admin_books', add=1) }}">{{ icon('book', 14) }} Add a book</a>
+          <a class="btn ghost small" href="{{ url_for('admin_users') }}">{{ icon('users', 14) }} User Management</a>
+          <a class="btn ghost small" href="{{ url_for('chat') }}">{{ icon('chat', 14) }} Ask for the finance report</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="card">
+        <div class="kicker">Join BookOrbit AI</div>
+        <p class="small" style="line-height:1.5">Create an account with a quick face scan to buy books, get picks made for you and read with the AI Reading Companion.</p>
+        <div class="grid" style="gap:8px">
+          <a class="btn" href="{{ url_for('register') }}">Create account</a>
+          <a class="btn ghost" href="{{ url_for('signin') }}">Sign in with your face</a>
+        </div>
+      </div>
+      <div class="card small"><div class="kicker">Ask the store</div>
+        <p style="margin:6px 0 10px;line-height:1.5">Questions about prices, hours or the VIP program? The AI chatbot answers from the store's own files.</p>
+        <a class="link" href="{{ url_for('chat') }}">Open AI Chatbot ›</a></div>
+    {% endif %}
+  </aside>
+</div>
+{% include "_cover_modal.html" %}
+{% endblock %}

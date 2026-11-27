@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, year %}
+{% block title %}Manage Books · BookOrbit AI{% endblock %}
+{% block content %}
+<div class="row"><h1>Book Catalog Management</h1><span class="spacer"></span>
+  <button class="btn" type="button" data-toggle="add-book">{{ icon('book', 14) }} + Add Book</button></div>
+
+<form class="card" method="post" enctype="multipart/form-data" id="add-book" style="margin:14px 0 20px;{{ '' if open_form else 'display:none' }}">
+  <h3>Add a new book</h3>
+  <div class="grid" style="grid-template-columns:repeat(3, minmax(0,1fr));gap:4px 16px">
+    {% for name, label, ph in [('title','Title',''),('author','Author',''),('category','Category','e.g. Literature, Science'),
+                              ('year','Publication year','e.g. 1851'),('price','Price (USD)','e.g. 9.99'),('keywords','Keywords','comma separated')] %}
+    <div class="field {{ 'invalid' if errors.get(name) }}"><label class="lbl" for="f-{{ name }}">{{ label }}</label>
+      <input type="text" id="f-{{ name }}" name="{{ name }}" value="{{ form.get(name, '') }}" placeholder="{{ ph }}" {{ 'list=cats' if name == 'category' }}>
+      {% if errors.get(name) %}<div class="err" data-error="{{ name }}">{{ errors[name] }}</div>{% endif %}</div>
+    {% endfor %}
+  </div>
+  <datalist id="cats">{% for c in categories %}<option value="{{ c }}">{% endfor %}</datalist>
+  <div class="field {{ 'invalid' if errors.get('description') }}"><label class="lbl" for="f-description">Description</label>
+    <textarea id="f-description" name="description">{{ form.get('description', '') }}</textarea>
+    {% if errors.get('description') %}<div class="err" data-error="description">{{ errors.description }}</div>{% endif %}</div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px">
+    <div class="field {{ 'invalid' if errors.get('cover') }}"><label class="lbl" for="f-cover">Cover image (JPG or PNG) - indexed for cover search</label>
+      <input type="file" id="f-cover" name="cover" accept="image/png,image/jpeg">
+      {% if errors.get('cover') %}<div class="err" data-error="cover">{{ errors.cover }}</div>{% endif %}</div>
+    <div class="field {{ 'invalid' if errors.get('text') }}"><label class="lbl" for="f-text">Public-domain text, optional (UTF-8 .txt, e.g. from gutenberg.org)</label>
+      <input type="file" id="f-text" name="text" accept=".txt,text/plain">
+      {% if errors.get('text') %}<div class="err" data-error="text">{{ errors.text }}</div>{% endif %}</div>
+  </div>
+  <button class="btn" id="save-book">Save book</button>
+</form>
+
+<div class="card">
+<table class="tbl" id="catalog">
+  <thead><tr><th>ID</th><th>Title</th><th>Author</th><th>Category</th><th>Year</th><th style="text-align:right">Price</th><th>Views</th><th>Sold</th><th>Rating</th><th>List</th><th>Text</th></tr></thead>
+  <tbody>
+  {% for b in books %}
+  <tr data-book="{{ b.book_ID }}"><td class="tiny muted">{{ b.book_ID }}</td><td><a class="link" href="{{ url_for('book', book_ID=b.book_ID) }}">{{ b.title }}</a></td>
+    <td>{{ b.author }}</td><td>{{ b.category }}</td><td>{{ year(b.pub_Year) }}</td><td style="text-align:right">{{ fmt(b.price) }}</td>
+    <td>{{ b.browse_Count }}</td><td>{{ b.purchase_Count }}</td>
+    <td>{{ '%.2f'|format(b.weighted_Avg) if b.rating_Count else '—' }} <span class="tiny muted">({{ b.rating_Count }})</span></td>
+    <td>{% if b.list_Status == 'TO_ORDER' %}<span class="badge green">To-Order</span>{% elif b.list_Status == 'NO_ORDER' %}<span class="badge red">No-Order</span>{% endif %}</td>
+    <td>{{ '✓' if b.text_Path else '' }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

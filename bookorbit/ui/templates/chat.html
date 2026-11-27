@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}AI Chatbot · BookOrbit AI{% endblock %}
+{% block content %}
+<div class="chatwrap">
+  <h1>BookOrbit AI Chatbot</h1>
+  <div class="muted small">{% if S.role == 'VS' %}Ask about books, prices, hours and store policies. Sign in for account questions and general answers.
+    {% elif S.role == 'SU' %}Super-User: you can also ask for the finance report, suspended accounts, warnings and order lists.
+    {% elif S.role == 'VC' %}VIP: you can also ask about what happens inside any book in the store.
+    {% else %}Ask about books, the store, your own account — or anything else.{% endif %}
+    Answers say whether they came from the store's files (RAG) or from the local LLM.</div>
+  <div class="msgs" id="msgs">
+    <div class="msg bot">Hi{{ ' ' ~ me.full_Name.split()[0] if me }}! How can I help you today?</div>
+  </div>
+  <div class="suggest" id="suggest">{% for e in examples %}<button type="button" data-ask="{{ e }}">{{ e }}</button>{% endfor %}</div>
+  <form class="chatbar" id="chat-form">
+    <input type="text" id="question" placeholder="Type your question…" maxlength="500" autocomplete="off" aria-label="Question">
+    <button class="btn" id="send" disabled>{{ icon('send', 14) }} Send</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}<script>initChat("{{ url_for('chat_ask') }}");</script>{% endblock %}

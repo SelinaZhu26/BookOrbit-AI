@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, stars, initials, year %}
+{% block title %}{{ b.title }} · BookOrbit AI{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('browse') }}">‹ Back to Browse</a>
+<div class="detail">
+  <img class="cover" src="{{ url_for('covers', name=b.cover_Path.split('/')[-1]) }}" alt="Cover of {{ b.title }}">
+  <div>
+    <span class="badge">{{ b.category }} · {{ year(b.pub_Year) }}</span>
+    <h1 style="margin-top:10px" id="book-title">{{ b.title }}</h1>
+    <div class="muted">by {{ b.author }}</div>
+    <div style="margin-top:8px" id="book-rating">{{ stars(b.weighted_Avg) }}
+      {% if b.rating_Count %}<b>{{ '%.2f'|format(b.weighted_Avg) }}</b> <span class="muted small">weighted average · {{ b.rating_Count }} rating{{ '' if b.rating_Count == 1 else 's' }}</span>
+      {% else %}<span class="muted small">No ratings yet</span>{% endif %}
+      {% if S.role == 'SU' and b.list_Status != 'NONE' %}<span class="badge {{ 'green' if b.list_Status == 'TO_ORDER' else 'red' }}">{{ 'To-Order list' if b.list_Status == 'TO_ORDER' else 'No-Order list' }}</span>{% endif %}
+    </div>
+    <div class="price" id="book-price">{{ fmt(price.final) }}{% if price.vip %}<s>{{ fmt(price.list) }}</s> <span class="badge gold">VIP −10% applied</span>{% endif %}</div>
+    <p style="max-width:640px;line-height:1.55">{{ b.description }}</p>
+    <div class="small muted">Keywords {% for k in b.keywords %}<span class="chip">{{ k }}</span>{% endfor %}</div>
+
+    <div class="row wrap" style="margin-top:16px" id="book-actions">
+      {% if S.is_customer %}
+        {% if has_text %}<a class="btn" href="{{ url_for('read', book_ID=b.book_ID) }}" id="open-companion">{{ icon('reading', 15) }} Open Reading Companion</a>{% endif %}
+        {% if owned %}
+          <span class="badge green">{{ icon('check', 12) }} You own this book</span>
+        {% else %}
+          <form method="post" action="{{ url_for('cart_add', book_ID=b.book_ID) }}" class="row">
+            <button class="btn gold" name="buy_now" value="1" {{ 'disabled title="Your account is suspended"' if suspended }} id="buy-now">Buy now · {{ fmt(price.final) }}</button>
+            <button class="btn ghost" {{ 'disabled' if suspended or in_cart }} id="add-cart">{{ icon('cart', 14) }} {{ 'In your cart' if in_cart else 'Add to cart' }}</button>
+          </form>
+        {% endif %}
+        {% if own_review %}<span class="badge green">{{ icon('check', 12) }} You reviewed this book</span>{% endif %}
+      {% elif S.is_visitor %}
+        <a class="btn gold" href="{{ url_for('signin', next=request.path) }}">Sign in to buy</a>
+        {% if has_text %}<span class="small muted">Customers can read this book with the AI Reading Companion.</span>{% endif %}
+      {% endif %}
+      {% if not has_text %}<span class="small muted">The Reading Companion isn't available for this book.</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if result %}
+  <div class="alert {{ 'success' if result.kind == 'published' else ('info' if result.kind == 'invalid' else 'error') }}" style="margin-top:22px" id="review-result">
+    {% if result.kind == 'blocked' %}<b>{{ result.message.split('. ')[0] }}.</b> {{ result.message.split('. ', 1)[1] if '. ' in result.message }}
+    {% else %}{{ result.message }}{% endif %}
+  </div>
+{% endif %}
+
+<div class="reviews-wrap" id="reviews">
+  <div>
+    <h2>Reviews ({{ reviews|length }})</h2>
+    <div class="card" style="margin-top:12px">
+      <div class="row"><span class="serif" style="font-size:30px;font-weight:800">{{ '%.2f'|format(b.weighted_Avg) }}</span><span class="muted small">out of 5 · verified buyers count ×2</span></div>
+      {% set total = reviews|length or 1 %}
+      {% for s, n in breakdown.items() %}
+      <div class="row small" style="margin-top:6px"><span style="width:22px">{{ s }}★</span><div class="bar"><span style="width:{{ (n / total * 100)|round }}%"></span></div><span style="width:16px;text-align:right">{{ n }}</span></div>
+      {% endfor %}
+    </div>
+
+    <div class="card" style="margin-top:16px" id="review-form-card">
+      <h3>{{ 'Edit your review' if own_review else 'Write a review' }}</h3>
+      {% set disabled = suspended or S.wallet_only %}
+      <form method="post" action="{{ url_for('review', book_ID=b.book_ID) }}" id="review-form">
+        {% set cur = (result.rating if result and result.kind == 'invalid' else (own_review.rating if own_review else 0))|int %}
+        <div class="starpick" role="radiogroup" aria-label="Rating">
+          {% for s in range(5, 0, -1) %}
+          <input type="radio" name="rating" id="star{{ s }}" value="{{ s }}" {{ 'checked' if cur == s }} {{ 'disabled' if disabled }}>
+          <label for="star{{ s }}" title="{{ s }} star{{ 's' if s > 1 }}">★</label>{% endfor %}
+        </div>
+        <textarea name="comment" maxlength="1000" placeholder="What did you think?" {{ 'disabled' if disabled }} id="comment">{{ result.comment if result and result.kind == 'invalid' else (own_review.original_Text if own_review else '') }}</textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" {{ 'disabled' if disabled }} id="submit-review">Submit review</button>
+          <span class="small muted" id="char-count">0 / 1000</span>
+        </div>
+        {% if disabled %}<div class="small err" style="margin-top:8px">Your account is suspended, so the review form is disabled.</div>{% endif %}
+        {% if S.is_visitor %}<div class="tiny muted" style="margin-top:8px">You are reviewing as a Visitor. Reviews from customers who bought the book count double.</div>{% endif %}
+      </form>
+    </div>
+  </div>
+  <div id="review-list">
+    {% for r in reviews %}
+    <div class="review" data-review="{{ r.review_ID }}">
+      <div class="head"><div class="avatar">{{ initials(r.author_Name) }}</div>
+        <div><b class="small">{{ r.author_Name }}{% if own_review and own_review.review_ID == r.review_ID %} (you){% endif %}</b>
+          {% if r.verified_Buyer %}<span class="tiny" style="color:var(--green);font-weight:600;margin-left:6px">✓ verified buyer</span>{% endif %}
+          <div>{{ stars(r.rating) }} <span class="tiny muted">{{ r.updated_At[:10] }}</span></div></div></div>
+      <p>{{ r.display_Text }}</p>
+    </div>
+    {% else %}
+    <div class="card muted" id="no-reviews">No reviews yet</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% from "_macros.html" import icon %}
+{# Face sample widget: live webcam preview + Capture, or a photo file. #}
+<div class="facebox" data-facebox data-purpose="{{ purpose }}" data-camera="{{ 1 if camera else 0 }}">
+  <div class="row" style="margin-bottom:8px">
+    <span style="color:var(--navy)">{{ icon('face', 20) }}</span>
+    <div><b class="small">Face {{ 'scan' if purpose == 'login' else 'sign-in' }}</b> <span class="tiny muted">{{ 'required' if purpose != 'login' else '' }}</span>
+      <div class="tiny muted">{% if purpose == 'register' %}We take 3 quick samples and keep only a face template.{% else %}Look at the camera, then press Capture.{% endif %}</div></div>
+  </div>
+  {% if not bio_ok %}<div class="alert error small">Face recognition models are missing. Run <code>python tools/download_models.py</code>.</div>{% endif %}
+  <div class="cam" data-cam>
+    {% if camera %}<img src="{{ url_for('camera_stream') }}" alt="Live camera preview" data-live>
+    {% else %}<div style="padding:16px">No camera detected.<br>Connect a camera, or choose a photo file of your face below.</div>{% endif %}
+  </div>
+  <div class="row" style="margin-top:10px">
+    {% if camera %}<button class="btn small" type="button" data-capture>{{ icon('camera', 14) }} Capture</button>{% endif %}
+    <label class="btn ghost small" style="margin:0">{{ icon('face', 14) }} Choose photo file
+      <input type="file" name="face_photo" accept="image/png,image/jpeg" data-photo hidden></label>
+  </div>
+  <div class="facemsg {{ 'bad' if face_error }}" data-facemsg>{{ face_error or '' }}</div>
+</div>

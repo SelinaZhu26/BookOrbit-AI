@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% from "_macros.html" import bookcard %}
+{% block title %}Recommendations · BookOrbit AI{% endblock %}
+{% block content %}
+<h1>{{ rec.title }}</h1>
+<div class="muted small" style="margin-bottom:18px">{{ rec.subtitle }} A purchase counts 3 times as much as a view.</div>
+<div class="books" id="recs">{% for b in rec.books %}{{ bookcard(b, rec.reasons.get(b.book_ID)) }}{% endfor %}</div>
+{% endblock %}

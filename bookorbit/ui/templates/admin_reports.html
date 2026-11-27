@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Reports · BookOrbit AI{% endblock %}
+{% block content %}
+<div class="row"><h1>Reports</h1><span class="spacer"></span>
+  <form method="post"><button class="btn ghost" id="recalc">Recalculate all</button></form></div>
+<div class="kpis" style="margin-top:14px">
+  <div class="card kpi"><div class="kicker">Total sales</div><div class="v">{{ fmt(facts.total_sales) }}</div><div class="tiny muted">{{ facts.books_sold }} books sold</div></div>
+  <div class="card kpi"><div class="kicker">Deposits</div><div class="v">{{ fmt(facts.deposits) }}</div><div class="tiny muted">customer balances {{ fmt(facts.customer_balances) }}</div></div>
+  <div class="card kpi"><div class="kicker">Fines</div><div class="v">{{ fmt(facts.fines) }}</div><div class="tiny muted">{{ facts.fine_count }} fines</div></div>
+  <div class="card kpi"><div class="kicker">Customers</div><div class="v">{{ facts.customers }}</div><div class="tiny muted">{{ facts.vip_customers }} VIP · {{ facts.suspended|length }} suspended</div></div>
+</div>
+{% if lists.message %}<div class="alert info" id="no-lists">{{ lists.message }}</div>{% endif %}
+<div class="grid" style="grid-template-columns:1fr 1fr">
+  {% for key, title, badge, note in [('no_order','No-Order list','red','more than 3 ratings, weighted average below 2 · lowest first'),
+                                     ('to_order','To-Order list','green','more than 3 ratings, weighted average above 4 · highest first')] %}
+  <div class="card" id="{{ key }}">
+    <h3><span class="badge {{ badge }}">{{ title }}</span></h3><div class="tiny muted" style="margin-bottom:8px">{{ note }}</div>
+    <table class="tbl"><thead><tr><th>Title</th><th>Author</th><th>Ratings</th><th>Weighted avg</th></tr></thead><tbody>
+    {% for b in lists[key] %}<tr><td><a class="link" href="{{ url_for('book', book_ID=b.book_ID) }}">{{ b.title }}</a></td><td>{{ b.author }}</td><td>{{ b.rating_Count }}</td><td><b>{{ '%.2f'|format(b.weighted_Avg) }}</b></td></tr>
+    {% else %}<tr><td colspan="4" class="muted">No books on this list.</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

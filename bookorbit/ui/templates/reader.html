@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ v.book.title }} · Reading Companion{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('book', book_ID=v.book.book_ID) }}">‹ Back to book</a>
+<div class="row" style="margin-bottom:14px"><div><h1 style="margin:0">{{ v.book.title }}</h1>
+  <div class="muted small">{{ v.book.author }} · Smart Reading Companion · {{ v.titles[v.chapter - 1] }} ({{ v.chapter }} of {{ v.count }})</div></div>
+  <span class="spacer"></span>
+  {% if not v.owned %}<span class="badge gold">Preview: chapter 1 is free</span>{% else %}<span class="badge green">{{ icon('check', 12) }} You own this book</span>{% endif %}
+</div>
+<div class="reader">
+  <nav class="card toc" aria-label="Chapters" id="toc">
+    <div class="kicker" style="margin-bottom:6px">Chapters</div>
+    {% for t in v.titles %}<a href="{{ url_for('read', book_ID=v.book.book_ID, chapter=loop.index) }}" class="{{ 'cur' if loop.index == v.chapter }} {{ 'lock' if loop.index > 1 and not v.owned }}">{{ '🔒 ' if loop.index > 1 and not v.owned }}{{ t }}</a>{% endfor %}
+  </nav>
+  <article class="page" id="page" data-book="{{ v.book.book_ID }}" data-chapter="{{ v.chapter }}">
+    {% if v.locked %}
+      <div style="text-align:center;padding:60px 10px;font-family:var(--sans)" id="locked">
+        <h2>Buy the book to keep reading</h2>
+        <p class="muted">Chapter 1 is free. Buying the book unlocks all {{ v.count }} chapters and every Companion tool.</p>
+        <form method="post" action="{{ url_for('cart_add', book_ID=v.book.book_ID) }}"><button class="btn gold" name="buy_now" value="1">Buy now</button></form>
+      </div>
+    {% else %}
+      <h2 style="font-family:var(--serif)">{{ v.titles[v.chapter - 1] }}</h2>
+      {% for p in v.paragraphs %}<p>{{ p }}</p>{% endfor %}
+      <div class="row" style="font-family:var(--sans);margin-top:20px">
+        {% if v.chapter > 1 %}<a class="btn ghost small" href="{{ url_for('read', book_ID=v.book.book_ID, chapter=v.chapter - 1) }}">‹ Previous chapter</a>{% endif %}
+        <span class="spacer"></span>
+        {% if v.chapter < v.count %}<a class="btn small" href="{{ url_for('read', book_ID=v.book.book_ID, chapter=v.chapter + 1) }}" id="next-chapter">Next chapter ›</a>{% endif %}
+      </div>
+    {% endif %}
+  </article>
+  <aside class="card side" id="companion">
+    <h3>{{ icon('sparkle', 15) }} Companion</h3>
+    <div class="tiny muted">Select text in the chapter, then pick a tool. Answers use only this book's text.
+      {% if not llm_ok %}<br><b style="color:var(--red)">LLM offline:</b> Summarize, Quiz me and Ask still work offline; Explain and Define need Ollama.{% endif %}</div>
+    <div class="tiny" style="margin-top:8px">Selected: <i id="sel-preview" class="muted">nothing</i></div>
+    <div class="row wrap" style="margin-top:10px">
+      <button class="btn small" data-act="summarize" {{ 'disabled' if v.locked }}>Summarize</button>
+      <button class="btn small ghost" data-act="explain" {{ 'disabled' if v.locked }}>Explain</button>
+      <button class="btn small ghost" data-act="define" {{ 'disabled' if v.locked }}>Define word</button>
+      <button class="btn small ghost" data-act="quiz" {{ 'disabled' if v.locked }}>Quiz me</button>
+    </div>
+    <form class="row" style="margin-top:10px" id="ask-form">
+      <input type="text" id="ask" placeholder="Ask about this book…" {{ 'disabled' if v.locked }}>
+      <button class="btn small" {{ 'disabled' if v.locked }}>Ask</button>
+    </form>
+    <div class="aiout" id="aiout"></div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}<script>initReader("{{ url_for('read_act', book_ID=v.book.book_ID) }}", "{{ url_for('quiz_answer') }}");</script>{% endblock %}

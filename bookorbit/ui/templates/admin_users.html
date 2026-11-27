@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}User Management · BookOrbit AI{% endblock %}
+{% block content %}
+<h1>User Management</h1>
+<h2 style="margin-top:18px">Suspended accounts ({{ suspended|length }})</h2>
+<div class="card" style="margin-top:10px">
+<table class="tbl" id="suspended">
+  <thead><tr><th>Customer</th><th style="text-align:right">Balance</th><th>Warnings</th><th>Reason</th><th>Reopen</th></tr></thead>
+  <tbody>
+  {% for u in suspended %}
+  <tr data-user="{{ u.username }}"><td><b>{{ u.full_Name }}</b><div class="tiny muted">{{ u.username }} · {{ u.role_name }}</div></td>
+    <td style="text-align:right" class="{{ 'amount-neg' if u.balance < 0 }}">{{ fmt(u.balance) }}</td><td>{{ u.warnings }}</td><td class="small">{{ u.suspension_Reason }}</td>
+    <td><form method="post" action="{{ url_for('admin_reopen', user_ID=u.user_ID) }}" class="row">
+        <input type="text" name="amount" placeholder="{{ 'Deposit (≥ ' ~ fmt(-u.balance) ~ ')' if u.balance < 0 else 'Optional deposit' }}" style="width:150px">
+        <button class="btn small">Reopen</button></form>
+      {% if errors.get(u.user_ID) %}<div class="err" data-reopen-error>{{ errors[u.user_ID] }}</div>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted" id="none-suspended">No suspended accounts.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+
+<h2 style="margin-top:26px">All accounts</h2>
+<div class="card" style="margin-top:10px">
+<table class="tbl" id="users">
+  <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Status</th><th style="text-align:right">Balance</th><th>Warnings</th><th>Purchases</th><th>Face template</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+  <tr data-user="{{ u.username }}"><td class="tiny muted">{{ u.user_ID }}</td><td><b>{{ u.full_Name }}</b><div class="tiny muted">{{ u.username }} · {{ u.email }}</div></td>
+    <td>{{ u.role_name }}</td><td><span class="badge {{ 'green' if u.status == 'ACTIVE' else 'red' }}">{{ u.status|title }}</span></td>
+    <td style="text-align:right">{{ fmt(u.balance) if u.role != 'SU' else '—' }}</td><td>{{ u.warnings }}</td><td>{{ u.purchase_Count }}</td>
+    <td>{% if u.has_face %}<span class="badge green">enrolled</span>{% else %}<span class="badge red">missing</span>{% endif %}
+      <button class="btn ghost small" type="button" data-enroll="{{ u.user_ID }}" data-name="{{ u.full_Name }}">{{ icon('face', 13) }} {{ 'Replace' if u.has_face else 'Enrol face' }}</button></td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<div class="modal-bg" id="enroll-modal" role="dialog" aria-modal="true">
+  <form class="modal" method="post" enctype="multipart/form-data" id="enroll-form">
+    <h2>Enrol face for <span id="enroll-name"></span></h2>
+    <p class="small muted">Ask the customer to look at the camera, or choose a photo of their face. Only the face template is saved.</p>
+    {% set purpose = 'register' %}{% set face_error = None %}{% set bio_ok = True %}
+    {% include "_facebox.html" %}
+    <div class="row"><span class="spacer"></span><button class="btn ghost" type="button" data-close="enroll-modal">Cancel</button><button class="btn">Save template</button></div>
+  </form>
+</div>
+{% endblock %}

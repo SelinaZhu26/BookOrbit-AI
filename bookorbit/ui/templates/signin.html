@@ -1,0 +1,21 @@
+{% extends "auth_base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<h2>Sign in</h2>
+<div class="small muted" style="margin-bottom:18px">New here? <a class="link" href="{{ url_for('register') }}">Create an account</a></div>
+{% if error %}<div class="alert error" id="signin-error">{{ error }}</div>{% endif %}
+<form method="post" enctype="multipart/form-data" id="signin-form">
+  <input type="hidden" name="step" value="{{ step }}">
+  <div class="field"><label class="lbl" for="username">Username</label>
+    <input type="text" id="username" name="username" value="{{ username }}" {{ 'readonly' if step == 'face' }} autofocus></div>
+  {% if step == 'face' %}
+    {% set purpose = 'login' %}{% set face_error = None %}
+    {% include "_facebox.html" %}
+    <button class="btn block" type="submit" id="verify">Verify face and sign in</button>
+    <div style="text-align:center;margin-top:12px" class="small"><a class="link" href="{{ url_for('signin') }}">Use a different username</a></div>
+  {% else %}
+    <button class="btn block" type="submit" id="next">Continue</button>
+  {% endif %}
+  <div style="text-align:center;margin-top:14px" class="small"><a class="link" href="{{ url_for('home') }}" style="font-weight:500;text-decoration:underline">Just browsing? Continue as a visitor</a></div>
+</form>
+{% endblock %}
